@@ -3,7 +3,13 @@ import "./helper.css";
 
 export const metadata = {
   title: "Réussite+ | Aide aux devoirs",
-  description: "Des explications simples et des exercices pour progresser du CP à la 3e."
+  description: "Des explications simples, des cours et des exercices gratuits pour progresser du CP à la 3e.",
+  alternates: {
+    canonical: "https://aide-aux-devoirs-dusky.vercel.app/"
+  },
+  verification: {
+    google: "hyatuXNqlwTrhpXvwuLbORgS8TpGHMB9iQVrdRzmSew"
+  }
 };
 
 export default function RootLayout({ children }) {
