@@ -1,80 +1,96 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+const levels = ["CP", "CE1", "CE2", "CM1", "CM2", "6e", "5e", "4e", "3e"];
 const subjects = [
-  { icon: "＋", name: "Mathématiques", detail: "Calcul, fractions et géométrie", color: "blue" },
-  { icon: "A", name: "Français", detail: "Grammaire, conjugaison et lecture", color: "red" },
-  { icon: "⌛", name: "Histoire-Géo", detail: "Dates, cartes et civilisations", color: "amber" },
-  { icon: "⚗", name: "Sciences", detail: "SVT, physique et expériences", color: "green" },
-  { icon: "EN", name: "Anglais", detail: "Vocabulaire et expressions", color: "purple" },
-  { icon: "✎", name: "Méthodologie", detail: "S'organiser et mieux apprendre", color: "cyan" }
+  { id: "maths", icon: "＋", name: "Mathématiques", color: "blue", intro: "Multiplier, c’est additionner plusieurs fois le même nombre.", example: "3 × 5 signifie 5 + 5 + 5. Le résultat est 15.", tip: "Dessine les groupes si le calcul te paraît difficile.", questions: [{ q: "Combien font 4 × 6 ?", a: "24", help: "Additionne 6 quatre fois." }, { q: "Combien font 7 × 3 ?", a: "21", help: "3 + 3 + 3 + 3 + 3 + 3 + 3." }] },
+  { id: "francais", icon: "A", name: "Français", color: "red", intro: "Le sujet indique qui fait l’action. Le verbe indique l’action.", example: "Dans « Lina prépare son cartable », Lina est le sujet et prépare est le verbe.", tip: "Pour trouver le verbe, demande-toi : que fait le sujet ?", questions: [{ q: "Quel est le verbe : « Paul mange une pomme » ?", a: "mange", help: "Cherche l’action de Paul." }, { q: "Quel est le sujet : « Les élèves travaillent » ?", a: "les élèves", help: "Qui travaille ?" }] },
+  { id: "histoire", icon: "⌛", name: "Histoire-Géo", color: "amber", intro: "Une frise chronologique place les événements du plus ancien au plus récent.", example: "L’Antiquité vient avant le Moyen Âge, qui vient avant l’époque moderne.", tip: "Lis toujours une frise de gauche à droite.", questions: [{ q: "Quelle période vient après l’Antiquité ?", a: "moyen âge", help: "C’est la période des châteaux forts." }, { q: "Dans quel pays se trouve Paris ?", a: "france", help: "C’est la capitale du pays." }] },
+  { id: "sciences", icon: "⚗", name: "Sciences", color: "green", intro: "L’eau existe sous trois états : solide, liquide et gazeux.", example: "La glace est solide, l’eau du robinet est liquide et la vapeur est gazeuse.", tip: "Un changement de température peut faire changer l’état de l’eau.", questions: [{ q: "Quel est l’état de la glace ?", a: "solide", help: "Elle garde sa forme." }, { q: "Comment appelle-t-on l’eau sous forme de gaz ?", a: "vapeur", help: "On la voit au-dessus d’une casserole chaude." }] },
+  { id: "anglais", icon: "EN", name: "Anglais", color: "purple", intro: "Le verbe « to be » permet de dire qui l’on est ou comment on se sent.", example: "I am = je suis. You are = tu es. He or she is = il ou elle est.", tip: "Répète les phrases à voix haute pour mieux les mémoriser.", questions: [{ q: "Complète : I ___ happy.", a: "am", help: "Avec I, utilise la forme am." }, { q: "Que signifie « hello » en français ?", a: "bonjour", help: "C’est une formule pour saluer." }] },
+  { id: "methode", icon: "✎", name: "Méthodologie", color: "cyan", intro: "Une séance courte et régulière est plus efficace qu’une longue séance au dernier moment.", example: "Lis 10 minutes, ferme le cours, puis explique avec tes propres mots.", tip: "Travaille 25 minutes, puis fais une pause de 5 minutes.", questions: [{ q: "Après 25 minutes de travail, combien de minutes de pause ?", a: "5", help: "La pause est courte pour garder le rythme." }, { q: "Vaut-il mieux réviser régulièrement ? (oui/non)", a: "oui", help: "Un peu chaque jour aide la mémoire." }] }
 ];
+
+const clean = (value) => value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.!?]/g, "");
 
 export default function Home() {
   const [level, setLevel] = useState("6e");
   const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState(subjects[0]);
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState("");
-  const [result, setResult] = useState("");
+  const [feedback, setFeedback] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [profile, setProfile] = useState(null);
+  const [completed, setCompleted] = useState([]);
 
-  const filtered = useMemo(() => subjects.filter((s) =>
-    `${s.name} ${s.detail}`.toLowerCase().includes(query.toLowerCase())
-  ), [query]);
+  useEffect(() => {
+    try {
+      const savedProfile = JSON.parse(localStorage.getItem("reussite-profile"));
+      const savedProgress = JSON.parse(localStorage.getItem("reussite-progress")) || [];
+      if (savedProfile?.name) { setProfile(savedProfile); setLevel(savedProfile.level || "6e"); setNameInput(savedProfile.name); }
+      setCompleted(savedProgress);
+    } catch {}
+  }, []);
+
+  const filtered = useMemo(() => subjects.filter((s) => `${s.name} ${s.intro}`.toLowerCase().includes(query.toLowerCase())), [query]);
+  const question = selected.questions[questionIndex];
+  const progress = Math.round((completed.length / 12) * 100);
+
+  function chooseSubject(subject) {
+    setSelected(subject); setQuestionIndex(0); setAnswer(""); setFeedback(null);
+    setTimeout(() => document.getElementById("cours")?.scrollIntoView({ behavior: "smooth" }), 0);
+  }
 
   function checkAnswer(e) {
     e.preventDefault();
-    if (!answer.trim()) return setResult("Entre d’abord une réponse.");
-    setResult(Number(answer.replace(",", ".")) === 15 ? "Bravo ! 3 × 5 = 15 🎉" : "Presque ! Compte 3 groupes de 5.");
+    if (!answer.trim()) return setFeedback({ ok: false, text: "Écris d’abord ta réponse." });
+    const ok = clean(answer) === clean(question.a);
+    setFeedback({ ok, text: ok ? "Bravo, bonne réponse !" : `Pas encore. ${question.help}` });
+    if (ok) {
+      const key = `${selected.id}-${questionIndex}`;
+      if (!completed.includes(key)) {
+        const next = [...completed, key]; setCompleted(next); localStorage.setItem("reussite-progress", JSON.stringify(next));
+      }
+    }
+  }
+
+  function nextQuestion() { setQuestionIndex((questionIndex + 1) % selected.questions.length); setAnswer(""); setFeedback(null); }
+  function saveProfile(e) {
+    e.preventDefault(); if (!nameInput.trim()) return;
+    const next = { name: nameInput.trim(), level }; setProfile(next); localStorage.setItem("reussite-profile", JSON.stringify(next)); setProfileOpen(false);
   }
 
   return (
     <main>
       <header className="topbar">
-        <a className="brand" href="#top" aria-label="Accueil Réussite Plus"><span>R+</span> Réussite+</a>
-        <nav aria-label="Navigation principale">
-          <a href="#matieres">Matières</a><a href="#exercice">Exercice</a><a href="#methode">Méthode</a>
-        </nav>
-        <a className="smallButton" href="#exercice">Je commence</a>
+        <a className="brand" href="#accueil"><span>R+</span> Réussite+</a>
+        <nav><a href="#matieres">Matières</a><a href="#cours">Mon cours</a><a href="#progres">Progression</a></nav>
+        <button className="profileButton" onClick={() => setProfileOpen(true)}>{profile ? `Bonjour ${profile.name}` : "Créer mon profil"}</button>
       </header>
 
-      <section className="hero" id="top">
-        <div className="heroCopy">
-          <span className="eyebrow">DU CP À LA 3E · 100 % GRATUIT</span>
-          <h1>Un coup de pouce pour <em>comprendre</em>, pas seulement répondre.</h1>
-          <p>Des cours courts, des exemples concrets et des exercices corrigés pour avancer à ton rythme.</p>
-          <div className="finder">
-            <label htmlFor="search">Que veux-tu réviser ?</label>
-            <div><input id="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ex. fractions, passé composé…" /><a href="#matieres">Chercher</a></div>
-          </div>
-          <div className="levels" aria-label="Choisir une classe">
-            {['CP','CE1','CE2','CM1','CM2','6e','5e','4e','3e'].map((item) => <button key={item} onClick={() => setLevel(item)} className={level === item ? "active" : ""}>{item}</button>)}
-          </div>
-        </div>
-        <div className="heroCard" aria-label="Aperçu de progression">
-          <div className="mascot">✓</div>
-          <p className="mini">PROGRAMME DU JOUR · {level}</p>
-          <h2>Prêt pour une petite victoire ?</h2>
-          <ul><li><b>1.</b><span>Relis la leçon<small>5 minutes</small></span></li><li><b>2.</b><span>Fais un exercice<small>Sans regarder la correction</small></span></li><li><b>3.</b><span>Vérifie et comprends<small>Corrige tes erreurs</small></span></li></ul>
-          <div className="progress"><span /></div><small>2 étapes sur 3 aujourd’hui</small>
-        </div>
+      <section className="dashboard" id="accueil">
+        <div className="welcome"><span className="eyebrow">APPRENDRE À SON RYTHME</span><h1>{profile ? `Bonjour ${profile.name} !` : "Prêt à progresser ?"}</h1><p>Choisis ta classe et une matière. Lis le cours, puis réponds aux questions.</p><div className="levels" aria-label="Choisir une classe">{levels.map((item) => <button key={item} onClick={() => setLevel(item)} className={level === item ? "active" : ""}>{item}</button>)}</div></div>
+        <div className="progressCard" id="progres"><div><span>Ta progression</span><strong>{progress}%</strong></div><div className="progress"><span style={{ width: `${progress}%` }} /></div><p>{completed.length} exercice{completed.length > 1 ? "s" : ""} réussi{completed.length > 1 ? "s" : ""} sur 12</p></div>
       </section>
 
       <section className="section" id="matieres">
-        <div className="sectionHead"><div><span className="eyebrow">CHOISIS TA MATIÈRE</span><h2>Tout pour progresser</h2></div><p>Classe sélectionnée : <strong>{level}</strong></p></div>
-        <div className="subjectGrid">
-          {filtered.map((s) => <article className={`subject ${s.color}`} key={s.name}><div className="subjectIcon">{s.icon}</div><div><h3>{s.name}</h3><p>{s.detail}</p></div><span aria-hidden="true">→</span></article>)}
-        </div>
-        {filtered.length === 0 && <p className="empty">Aucune matière trouvée. Essaie un autre mot.</p>}
+        <div className="sectionHead"><div><span className="eyebrow">PROGRAMME DE {level.toUpperCase()}</span><h2>Choisis une matière</h2></div><label className="search"><span>Rechercher</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ex. anglais, calcul…" /></label></div>
+        <div className="subjectGrid">{filtered.map((s) => <button className={`subject ${s.color} ${selected.id === s.id ? "selected" : ""}`} key={s.id} onClick={() => chooseSubject(s)}><span className="subjectIcon">{s.icon}</span><span><strong>{s.name}</strong><small>1 cours · 2 exercices</small></span><b>→</b></button>)}</div>
+        {!filtered.length && <p className="empty">Aucune matière trouvée. Essaie un autre mot.</p>}
       </section>
 
-      <section className="exerciseWrap" id="exercice">
-        <div className="exerciseIntro"><span className="eyebrow light">EXERCICE EXPRESS</span><h2>Teste-toi en 2 minutes</h2><p>Une petite question permet de vérifier que la leçon est bien comprise.</p></div>
-        <form className="exercise" onSubmit={checkAnswer}><span>Mathématiques · niveau {level}</span><h3>Quel est le résultat de 3 × 5 ?</h3><label htmlFor="answer">Ta réponse</label><div><input id="answer" inputMode="decimal" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Écris le résultat" /><button>Vérifier</button></div><p className="result" aria-live="polite">{result}</p></form>
+      <section className="lessonArea" id="cours">
+        <div className="lesson"><span className={`lessonBadge ${selected.color}`}>{selected.icon} {selected.name} · {level}</span><h2>La leçon du jour</h2><p className="lead">{selected.intro}</p><div className="example"><b>Exemple</b><p>{selected.example}</p></div><div className="tip"><b>Astuce</b><p>{selected.tip}</p></div></div>
+        <form className="quiz" onSubmit={checkAnswer}><div className="quizTop"><span>Question {questionIndex + 1} sur {selected.questions.length}</span><span>{selected.name}</span></div><h3>{question.q}</h3><label htmlFor="answer">Ta réponse</label><input id="answer" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Écris ta réponse ici" autoComplete="off" /><button className="checkButton">Vérifier ma réponse</button>{feedback && <div className={`feedback ${feedback.ok ? "correct" : "wrong"}`} aria-live="polite"><b>{feedback.text}</b>{feedback.ok && <button type="button" onClick={nextQuestion}>Question suivante →</button>}</div>}</form>
       </section>
 
-      <section className="method section" id="methode"><span className="eyebrow">LA BONNE MÉTHODE</span><h2>Apprendre devient plus simple</h2><div><article><b>01</b><h3>Je comprends</h3><p>Je lis l’explication et je regarde l’exemple.</p></article><article><b>02</b><h3>Je m’entraîne</h3><p>Je fais l’exercice seul, même si je doute.</p></article><article><b>03</b><h3>Je progresse</h3><p>Je corrige mes erreurs et je recommence.</p></article></div></section>
+      <section className="steps section"><span className="eyebrow">LA BONNE MÉTHODE</span><h2>Trois étapes pour réussir</h2><div><article><b>01</b><h3>Je lis</h3><p>Je prends le temps de comprendre la leçon.</p></article><article><b>02</b><h3>Je réponds</h3><p>Je tente une réponse sans regarder l’aide.</p></article><article><b>03</b><h3>Je corrige</h3><p>Je comprends mon erreur et je recommence.</p></article></div></section>
+      <footer><a className="brand" href="#accueil"><span>R+</span> Réussite+</a><p>Cours et exercices gratuits du CP à la 3e.</p></footer>
 
-      <footer><a className="brand" href="#top"><span>R+</span> Réussite+</a><p>L’aide aux devoirs simple, claire et gratuite.</p><small>© 2026 Réussite+</small></footer>
+      {profileOpen && <div className="modalBackdrop" onMouseDown={(e) => e.target === e.currentTarget && setProfileOpen(false)}><div className="modal" role="dialog" aria-modal="true" aria-labelledby="profile-title"><button className="close" onClick={() => setProfileOpen(false)} aria-label="Fermer">×</button><span className="eyebrow">MON ESPACE</span><h2 id="profile-title">Créer mon profil</h2><p>Ton prénom et ta progression resteront enregistrés sur cet appareil.</p><form onSubmit={saveProfile}><label htmlFor="name">Prénom</label><input id="name" value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="Ex. Lucas" /><label htmlFor="class">Classe</label><select id="class" value={level} onChange={(e) => setLevel(e.target.value)}>{levels.map((item) => <option key={item}>{item}</option>)}</select><button>Enregistrer mon profil</button></form></div></div>}
     </main>
   );
 }
