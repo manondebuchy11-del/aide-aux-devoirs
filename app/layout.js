@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./helper.css";
 
 export const metadata = {
   title: "Réussite+ | Aide aux devoirs",

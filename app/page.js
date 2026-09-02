@@ -25,6 +25,12 @@ export default function Home() {
   const [nameInput, setNameInput] = useState("");
   const [profile, setProfile] = useState(null);
   const [completed, setCompleted] = useState([]);
+  const [homeworkText, setHomeworkText] = useState("");
+  const [homeworkImage, setHomeworkImage] = useState("");
+  const [homeworkPreview, setHomeworkPreview] = useState("");
+  const [solution, setSolution] = useState("");
+  const [solving, setSolving] = useState(false);
+  const [solveError, setSolveError] = useState("");
 
   useEffect(() => {
     try {
@@ -63,17 +69,64 @@ export default function Home() {
     const next = { name: nameInput.trim(), level }; setProfile(next); localStorage.setItem("reussite-profile", JSON.stringify(next)); setProfileOpen(false);
   }
 
+  function prepareImage(file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return setSolveError("Choisis une photo de l’exercice.");
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1600;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL("image/jpeg", .78);
+        setHomeworkImage(compressed); setHomeworkPreview(compressed); setSolveError(""); setSolution("");
+      };
+      img.onerror = () => setSolveError("Cette photo ne peut pas être lue.");
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function solveHomework(e) {
+    e.preventDefault();
+    if (!homeworkText.trim() && !homeworkImage) return setSolveError("Ajoute une photo ou écris l’énoncé.");
+    setSolving(true); setSolveError(""); setSolution("");
+    try {
+      const response = await fetch("/api/aide", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: homeworkText, image: homeworkImage, level }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "La correction n’est pas disponible.");
+      setSolution(data.answer);
+    } catch (error) { setSolveError(error.message); }
+    finally { setSolving(false); }
+  }
+
   return (
     <main>
       <header className="topbar">
         <a className="brand" href="#accueil"><span>R+</span> Réussite+</a>
-        <nav><a href="#matieres">Matières</a><a href="#cours">Mon cours</a><a href="#progres">Progression</a></nav>
+        <nav><a href="#aide">Mon exercice</a><a href="#matieres">Matières</a><a href="#progres">Progression</a></nav>
         <button className="profileButton" onClick={() => setProfileOpen(true)}>{profile ? `Bonjour ${profile.name}` : "Créer mon profil"}</button>
       </header>
 
       <section className="dashboard" id="accueil">
         <div className="welcome"><span className="eyebrow">APPRENDRE À SON RYTHME</span><h1>{profile ? `Bonjour ${profile.name} !` : "Prêt à progresser ?"}</h1><p>Choisis ta classe et une matière. Lis le cours, puis réponds aux questions.</p><div className="levels" aria-label="Choisir une classe">{levels.map((item) => <button key={item} onClick={() => setLevel(item)} className={level === item ? "active" : ""}>{item}</button>)}</div></div>
         <div className="progressCard" id="progres"><div><span>Ta progression</span><strong>{progress}%</strong></div><div className="progress"><span style={{ width: `${progress}%` }} /></div><p>{completed.length} exercice{completed.length > 1 ? "s" : ""} réussi{completed.length > 1 ? "s" : ""} sur 12</p></div>
+      </section>
+
+      <section className="helper section" id="aide">
+        <div className="helperIntro"><span className="eyebrow">AIDE PERSONNALISÉE</span><h2>Fais-toi expliquer ton exercice</h2><p>Prends une photo bien droite ou recopie l’énoncé. Réussite+ t’explique la méthode étape par étape.</p><ul><li>Photographie toute la consigne</li><li>Choisis ta classe en haut</li><li>Lis les étapes avant la réponse</li></ul></div>
+        <form className="homeworkForm" onSubmit={solveHomework}>
+          <label className="photoPicker"><input type="file" accept="image/*" capture="environment" onChange={(e) => prepareImage(e.target.files?.[0])} /><span>{homeworkPreview ? "Changer la photo" : "📷 Prendre une photo"}</span></label>
+          {homeworkPreview && <img className="homeworkPreview" src={homeworkPreview} alt="Exercice photographié" />}
+          <label htmlFor="homework">Ou écris l’énoncé</label>
+          <textarea id="homework" rows="5" value={homeworkText} onChange={(e) => setHomeworkText(e.target.value)} placeholder="Ex. Calcule 3/4 + 1/2 et explique les étapes…" />
+          <button className="solveButton" disabled={solving}>{solving ? "Analyse en cours…" : "M’aider à comprendre"}</button>
+          {solveError && <p className="solveError" aria-live="polite">{solveError}</p>}
+        </form>
+        {solution && <article className="solution" aria-live="polite"><span className="eyebrow">EXPLICATION</span><div>{solution}</div><button onClick={() => { setSolution(""); setHomeworkText(""); setHomeworkImage(""); setHomeworkPreview(""); }}>Faire un autre exercice</button></article>}
       </section>
 
       <section className="section" id="matieres">
