@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-
+import { extraQuestions } from "./extraQuestions";
 const levels = ["CP", "CE1", "CE2", "CM1", "CM2", "6e", "5e", "4e", "3e"];
 const subjects = [
   { id:"maths", icon:"＋", name:"Mathématiques", color:"blue", intro:"Multiplier, c’est additionner plusieurs fois le même nombre.", example:"3 × 5 signifie 5 + 5 + 5. Le résultat est 15.", tip:"Dessine les groupes si le calcul te paraît difficile.", questions:[
@@ -17,7 +17,9 @@ const subjects = [
   { id:"methode", icon:"✎", name:"Méthodologie", color:"cyan", intro:"Une séance courte et régulière est plus efficace qu’une longue séance au dernier moment.", example:"Lis 10 minutes, ferme le cours, puis explique avec tes propres mots.", tip:"Travaille 25 minutes, puis fais une pause de 5 minutes.", questions:[
     {q:"Après 25 minutes de travail, combien de minutes de pause ?",a:"5",help:"Une pause courte."},{q:"Vaut-il mieux réviser régulièrement ? (oui/non)",a:"oui",help:"Un peu chaque jour."},{q:"Faut-il lire toute la consigne ? (oui/non)",a:"oui",help:"Lis avant de répondre."},{q:"Vaut-il mieux tout apprendre la veille ? (oui/non)",a:"non",help:"Révise régulièrement."},{q:"Une courte pause aide-t-elle à rester concentré ? (oui/non)",a:"oui",help:"Elle permet de récupérer."},{q:"Faut-il comprendre ses erreurs ? (oui/non)",a:"oui",help:"Pour ne pas les refaire."},{q:"Répéter aide-t-il à mémoriser ? (oui/non)",a:"oui",help:"La répétition aide la mémoire."},{q:"Faut-il éloigner les distractions ? (oui/non)",a:"oui",help:"Pour mieux se concentrer."},{q:"Expliquer avec ses propres mots est-il utile ? (oui/non)",a:"oui",help:"Cela vérifie la compréhension."},{q:"Après une mauvaise réponse, faut-il abandonner ? (oui/non)",a:"non",help:"Comprends l’erreur et réessaie."}]}
 ];
-
+subjects.forEach((subject) => {
+  subject.questions.push(...(extraQuestions[subject.id] || []));
+});
 /*
 MISE À JOUR RÉUSSITE+
 - 10 questions par matière
