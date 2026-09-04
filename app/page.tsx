@@ -447,6 +447,53 @@ export default function Home() {
             ))}
           </div>
         </section>
+        <section className="section gray">
+  <div className="center">
+    <small>📚 FICHES DE RÉVISION</small>
+    <h2>Les petits cours à retenir</h2>
+    <p>Choisis une fiche, révise rapidement puis teste-toi avec un quiz.</p>
+  </div>
+
+  <div className="grid">
+    <article>
+      <span>🔢</span>
+      <h3>Mathématiques</h3>
+      <p>Tables, calculs, fractions, géométrie et problèmes.</p>
+    </article>
+
+    <article>
+      <span>🇫🇷</span>
+      <h3>Français</h3>
+      <p>Grammaire, conjugaison, orthographe et vocabulaire.</p>
+    </article>
+
+    <article>
+      <span>🌍</span>
+      <h3>Histoire-Géo</h3>
+      <p>Dates importantes, cartes et grandes notions.</p>
+    </article>
+
+    <article>
+      <span>🧪</span>
+      <h3>Sciences</h3>
+      <p>Corps humain, nature, expériences et découvertes.</p>
+    </article>
+
+    <article>
+      <span>⚗️</span>
+      <h3>Physique-Chimie</h3>
+      <p>Matière, énergie, électricité et expériences.</p>
+    </article>
+
+    <article>
+      <span>⚽</span>
+      <h3>Sport & Foot</h3>
+      <p>Règles, culture sportive et petits défis.</p>
+    </article>
+  </div>
+</section>
+
+
 
         <section
           id="quiz"
